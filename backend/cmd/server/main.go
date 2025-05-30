@@ -2,7 +2,9 @@ package main
 
 import (
 	"backend/internal/auth"
+	"backend/internal/chat"
 	"backend/internal/database"
+
 	"log"
 	"os"
 
@@ -49,6 +51,12 @@ func main() {
 			authGroup.POST("/register", auth.RegisterHandler)
 			authGroup.POST("/login", auth.LoginHandler)
 			authGroup.GET("/profile", auth.AuthMiddleware(), auth.ProfileHandler)
+		}
+		chatGroup := api.Group("/chat")
+		{
+			chatGroup.GET("/messages", chat.GetMessagesHandler)
+			chatGroup.GET("/ws", auth.AuthMiddleware(), chat.WebSocketHandler)
+			chatGroup.POST("/messages", auth.AuthMiddleware(), chat.SendMessageHandler)
 		}
 
 	}
