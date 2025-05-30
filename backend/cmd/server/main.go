@@ -1,6 +1,7 @@
 package main
 
 import (
+	"backend/internal/auth"
 	"backend/internal/database"
 	"log"
 	"os"
@@ -38,6 +39,19 @@ func main() {
 			"message": "Chat API is running",
 		})
 	})
+
+	// API routes
+	api := r.Group("/api")
+	{
+		// Auth routes
+		authGroup := api.Group("/auth")
+		{
+			authGroup.POST("/register", auth.RegisterHandler)
+			authGroup.POST("/login", auth.LoginHandler)
+			authGroup.GET("/profile", auth.AuthMiddleware(), auth.ProfileHandler)
+		}
+
+	}
 
 	// Start server
 	port := os.Getenv("PORT")
