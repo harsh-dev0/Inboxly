@@ -1,0 +1,5 @@
+.env
+# Go build directories
+/bin/
+/build/
+/dist/
