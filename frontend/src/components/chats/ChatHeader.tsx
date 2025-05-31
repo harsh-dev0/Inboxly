@@ -7,7 +7,7 @@ interface ChatHeaderProps {
   onlineUsers?: number;
 }
 
-const ChatHeader: React.FC<ChatHeaderProps> = ({ onlineUsers = 0 }) => {
+const ChatHeader: React.FC<ChatHeaderProps> = ({ onlineUsers }) => {
   const { user, logout } = useAuth();
 
   return (

@@ -10,6 +10,17 @@ interface MessageBubbleProps {
 const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
   const { user } = useAuth();
   const isOwnMessage = user?.id === message.user_id;
+  const isSystemMessage = message.type === 'system';
+
+  if (isSystemMessage) {
+    return (
+      <div className="flex justify-center my-2">
+        <div className="px-3 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+          {message.content}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`flex mb-4 animate-slide-up ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
@@ -18,9 +29,13 @@ const MessageBubble: React.FC<MessageBubbleProps> = ({ message }) => {
           ? 'bg-primary-600 text-white rounded-br-sm' 
           : 'bg-white text-gray-800 border border-gray-200 rounded-bl-sm'
       }`}>
-        {!isOwnMessage && (
+        {!isOwnMessage ? (
           <div className="text-xs font-medium text-primary-600 mb-1">
             {message.username}
+          </div>
+        ) : (
+          <div className="text-xs font-medium text-gray-200 mb-1">
+            You
           </div>
         )}
         <div className="break-words">
