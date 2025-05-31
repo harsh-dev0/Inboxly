@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 const isSecure = window.location.protocol === 'https:';
 const wsProtocol = isSecure ? 'wss://' : 'ws://';
+const httpProtocol = isSecure ? 'https://' : 'http://';
 const WS_BASE = import.meta.env.VITE_WS_URL || `${wsProtocol}${window.location.hostname}:8080`;
 
 interface HistoryMessage {
@@ -33,7 +34,10 @@ export const useWebSocket = () => {
 
   const fetchChatHistory = async () => {
     try {
-      const response = await fetch(`${WS_BASE.replace(wsProtocol, 'http://')}/api/chat/messages`, {
+      // Use HTTPS when the page is served over HTTPS, HTTP otherwise
+      const httpBaseUrl = WS_BASE.replace(wsProtocol, httpProtocol);
+      
+      const response = await fetch(`${httpBaseUrl}/api/chat/messages`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
