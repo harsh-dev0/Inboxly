@@ -148,4 +148,4 @@ backend/
 
 ## 📄 License
 
-This project is created for educational and portfolio purposes.
+This project is created for educational purposes.

@@ -54,8 +54,8 @@ frontend/  # React frontend (UI)
 
 ## Deployment
 
-Deployed app: [Add your deployment link here]
+Deployed app: https://inboxly-azure.vercel.app/
 
 ## License
 
-This project is created for educational and portfolio purposes. 
+This project is created for educational purposes. 
