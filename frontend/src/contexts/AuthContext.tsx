@@ -27,7 +27,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     if (storedToken && storedUser) {
       setToken(storedToken);
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error('Failed to parse stored user data:', error);
+        localStorage.removeItem('user');
+      }
     }
     setLoading(false);
   }, []);
@@ -35,11 +40,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const login = async (username: string, password: string) => {
     try {
       const response = await authAPI.login({ username, password });
+      console.log('Login response processed:', response);
+      
+      if (!response.token || !response.user) {
+        console.error('Invalid login response structure:', response);
+        throw new Error('Invalid server response format');
+      }
+      
       setToken(response.token);
       setUser(response.user);
+      
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     } catch (error) {
+      console.error('Login error:', error);
       throw error;
     }
   };
@@ -47,11 +61,20 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const register = async (username: string, email: string, password: string) => {
     try {
       const response = await authAPI.register({ username, email, password });
+      console.log('Register response processed:', response);
+      
+      if (!response.token || !response.user) {
+        console.error('Invalid register response structure:', response);
+        throw new Error('Invalid server response format');
+      }
+      
       setToken(response.token);
       setUser(response.user);
+      
       localStorage.setItem('token', response.token);
       localStorage.setItem('user', JSON.stringify(response.user));
     } catch (error) {
+      console.error('Register error:', error);
       throw error;
     }
   };

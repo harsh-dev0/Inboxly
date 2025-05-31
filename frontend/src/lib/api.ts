@@ -35,16 +35,27 @@ api.interceptors.response.use(
 export const authAPI = {
   login: async (data: LoginRequest): Promise<LoginResponse> => {
     const response = await api.post('/auth/login', data);
+    console.log('Raw login response:', response);
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
     return response.data;
   },
 
   register: async (data: RegisterRequest): Promise<LoginResponse> => {
     const response = await api.post('/auth/register', data);
+    console.log('Raw register response:', response);
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
     return response.data;
   },
 
   getProfile: async () => {
     const response = await api.get('/auth/profile');
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
     return response.data;
   },
 };
@@ -52,11 +63,17 @@ export const authAPI = {
 export const chatAPI = {
   getMessages: async (): Promise<Message[]> => {
     const response = await api.get('/chat/messages');
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
     return response.data;
   },
 
   sendMessage: async (content: string) => {
     const response = await api.post('/chat/messages', { content });
+    if (response.data && response.data.data) {
+      return response.data.data;
+    }
     return response.data;
   },
 };
