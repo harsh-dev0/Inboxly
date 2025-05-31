@@ -3,13 +3,14 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Loader2 } from 'lucide-react';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWakeNote, setShowWakeNote] = useState(false);
   
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -18,14 +19,17 @@ const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-
+    setShowWakeNote(false);
+    const wakeTimeout = setTimeout(() => setShowWakeNote(true), 2000);
     try {
       await login(username, password);
       navigate('/chat');
     } catch (err: any) {
       setError(err.response?.data?.message || 'Login failed');
     } finally {
+      clearTimeout(wakeTimeout);
       setLoading(false);
+      setShowWakeNote(false);
     }
   };
 
@@ -43,6 +47,13 @@ const Login: React.FC = () => {
         </div>
 
         <div className="card animate-fade-in">
+          {showWakeNote && (
+            <div className="flex flex-col items-center mb-4 animate-fade-in">
+              <Loader2 className="w-6 h-6 animate-spin text-primary-600 mb-2" />
+              <span className="text-sm text-gray-700 font-medium">Waking up server...</span>
+              <span className="text-xs text-gray-500">First request after a while may take a few seconds.</span>
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-6">
             <Input
               label="Username"
@@ -71,9 +82,9 @@ const Login: React.FC = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full"
+              className="w-full flex items-center justify-center"
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} {loading ? 'Signing in...' : 'Sign In'}
             </Button>
           </form>
 

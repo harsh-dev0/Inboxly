@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Loader2 } from 'lucide-react';
 
 const Register: React.FC = () => {
   const [username, setUsername] = useState('');
@@ -12,6 +12,7 @@ const Register: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showWakeNote, setShowWakeNote] = useState(false);
   
   const { register } = useAuth();
   const navigate = useNavigate();
@@ -31,6 +32,8 @@ const Register: React.FC = () => {
     }
 
     setLoading(true);
+    setShowWakeNote(false);
+    const wakeTimeout = setTimeout(() => setShowWakeNote(true), 2000);
 
     try {
       await register(username, email, password);
@@ -38,7 +41,9 @@ const Register: React.FC = () => {
     } catch (err: any) {
       setError(err.response?.data?.message || 'Registration failed');
     } finally {
+      clearTimeout(wakeTimeout);
       setLoading(false);
+      setShowWakeNote(false);
     }
   };
 
@@ -93,6 +98,14 @@ const Register: React.FC = () => {
               required
             />
 
+            {showWakeNote && (
+              <div className="flex flex-col items-center mb-4 animate-fade-in">
+                <Loader2 className="w-6 h-6 animate-spin text-primary-600 mb-2" />
+                <span className="text-sm text-gray-700 font-medium">Waking up server...</span>
+                <span className="text-xs text-gray-500">First request after a while may take a few seconds.</span>
+              </div>
+            )}
+
             {error && (
               <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg text-sm">
                 {error}
@@ -102,9 +115,9 @@ const Register: React.FC = () => {
             <Button
               type="submit"
               disabled={loading}
-              className="w-full"
+              className="w-full flex items-center justify-center"
             >
-              {loading ? 'Creating Account...' : 'Create Account'}
+              {loading && <Loader2 className="w-4 h-4 animate-spin mr-2" />} {loading ? 'Creating Account...' : 'Create Account'}
             </Button>
           </form>
 
