@@ -51,7 +51,7 @@ const Login: React.FC = () => {
             <div className="flex flex-col items-center mb-4 animate-fade-in">
               <Loader2 className="w-6 h-6 animate-spin text-primary-600 mb-2" />
               <span className="text-sm text-gray-700 font-medium">Waking up server...</span>
-              <span className="text-xs text-gray-500">First request after a while may take a few seconds.</span>
+              <span className="text-xs text-gray-500">First request after a while may take a few minutes.</span>
             </div>
           )}
           <form onSubmit={handleSubmit} className="space-y-6">
