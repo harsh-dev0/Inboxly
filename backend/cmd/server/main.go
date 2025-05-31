@@ -66,7 +66,7 @@ func main() {
 	if port == "" {
 		port = "8080"
 	}
-
+	r.SetTrustedProxies([]string{"127.0.0.1"})
 	log.Printf("Server starting on port %s", port)
 	if err := r.Run(":" + port); err != nil {
 		log.Fatal("Failed to start server:", err)
