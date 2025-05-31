@@ -20,12 +20,14 @@ func init() {
 func WebSocketHandler(c *gin.Context) {
 	userID, exists := c.Get("user_id")
 	if !exists {
+		log.Println("WebSocket connection failed: user_id not found in context")
 		utils.ErrorResponse(c, http.StatusUnauthorized, "User not authenticated", "missing_user")
 		return
 	}
 
 	username, exists := c.Get("username")
 	if !exists {
+		log.Println("WebSocket connection failed: username not found in context")
 		utils.ErrorResponse(c, http.StatusUnauthorized, "Username not found", "missing_username")
 		return
 	}
@@ -36,6 +38,7 @@ func WebSocketHandler(c *gin.Context) {
 		return
 	}
 
+	log.Printf("WebSocket connection established for user %s (ID: %v)", username, userID)
 	client := &Client{
 		hub:      hub,
 		conn:     conn,

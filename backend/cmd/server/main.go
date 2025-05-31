@@ -15,9 +15,7 @@ import (
 
 func main() {
 	// Load environment variables
-	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
-	}
+	godotenv.Load()
 
 	// Connect to database
 	database.Connect()
@@ -55,7 +53,7 @@ func main() {
 		chatGroup := api.Group("/chat")
 		{
 			chatGroup.GET("/messages", chat.GetMessagesHandler)
-			chatGroup.GET("/ws", auth.AuthMiddleware(), chat.WebSocketHandler)
+			chatGroup.GET("/ws", auth.WebSocketAuthMiddleware(), chat.WebSocketHandler)
 			chatGroup.POST("/messages", auth.AuthMiddleware(), chat.SendMessageHandler)
 		}
 

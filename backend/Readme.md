@@ -29,13 +29,13 @@ A modern real-time chat application backend built with Go, featuring WebSocket c
 
 1. **Clone the repository**
    ```bash
-   git clone <your-repo-url>
-   cd chat-app-backend
+   git clone https://github.com/harsh-dev0/Inboxly
+   cd backend
    ```
 
 2. **Initialize Go module and install dependencies**
    ```bash
-   go mod init chat-app-backend
+   go mod init backend
    go get github.com/gin-gonic/gin
    go get github.com/gorilla/websocket
    go get github.com/lib/pq
@@ -134,7 +134,7 @@ curl -X GET http://localhost:8080/api/chat/messages \
 ## 🏗️ Project Structure
 
 ```
-chat-app-backend/
+backend/
 ├── cmd/server/main.go          # Application entry point
 ├── internal/
 │   ├── auth/                   # Authentication logic

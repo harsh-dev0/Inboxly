@@ -22,11 +22,38 @@ func NewHub() *Hub {
 	}
 }
 
+func (h *Hub) broadcastUserCount() {
+	count := len(h.clients)
+	
+	message := WSMessage{
+		Type:    "online_count",
+		Payload: count,
+	}
+	messageBytes, _ := json.Marshal(message)
+
+	for c := range h.clients {
+		select {
+		case c.send <- messageBytes:
+		default:
+			close(c.send)
+			delete(h.clients, c)
+		}
+	}
+}
+
 func (h *Hub) Run() {
 	for {
 		select {
 		case client := <-h.register:
 			h.clients[client] = true
+
+			// Send current user count immediately to the new client
+			countMsg := WSMessage{
+				Type:    "online_count",
+				Payload: len(h.clients),
+			}
+			countBytes, _ := json.Marshal(countMsg)
+			client.send <- countBytes
 
 			// Notify all clients that a user joined
 			userJoined := UserJoined{
@@ -48,7 +75,8 @@ func (h *Hub) Run() {
 				}
 			}
 
-			log.Printf("Client registered: %s", client.username)
+			// Update online count after a user joins
+			h.broadcastUserCount()
 
 		case client := <-h.unregister:
 			if _, ok := h.clients[client]; ok {
@@ -75,7 +103,8 @@ func (h *Hub) Run() {
 					}
 				}
 
-				log.Printf("Client unregistered: %s", client.username)
+				// Update online count after a user leaves
+				h.broadcastUserCount()
 			}
 
 		case message := <-h.broadcast:
@@ -92,8 +121,8 @@ func (h *Hub) Run() {
 }
 
 func (h *Hub) saveMessage(message Message) {
-	query := `INSERT INTO messages (user_id, username, content) VALUES ($1, $2, $3)`
-	_, err := database.DB.Exec(query, message.UserID, message.Username, message.Content)
+	query := `INSERT INTO messages (user_id, username, content, created_at) VALUES ($1, $2, $3, $4)`
+	_, err := database.DB.Exec(query, message.UserID, message.Username, message.Content, message.Timestamp)
 	if err != nil {
 		log.Printf("Error saving message: %v", err)
 	}

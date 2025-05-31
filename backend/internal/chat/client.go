@@ -1,6 +1,7 @@
 package chat
 
 import (
+	"backend/internal/auth"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -20,7 +21,7 @@ var upgrader = websocket.Upgrader{
 	ReadBufferSize:  1024,
 	WriteBufferSize: 1024,
 	CheckOrigin: func(r *http.Request) bool {
-		return true // Allow all origins for development
+		return true
 	},
 }
 
@@ -32,57 +33,99 @@ type Client struct {
 	username string
 }
 
+
+func ServeWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
+	tokenString := r.URL.Query().Get("token")
+	if tokenString == "" {
+		http.Error(w, "Missing token", http.StatusUnauthorized)
+		return
+	}
+
+	claims, err := auth.ValidateToken(tokenString)
+	if err != nil {
+		http.Error(w, "Invalid token", http.StatusUnauthorized)
+		log.Printf("Invalid token: %v", err)
+		return
+	}
+
+	conn, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	client := &Client{
+		hub:      hub,
+		conn:     conn,
+		send:     make(chan []byte, 256),
+		userID:   claims.UserID,
+		username: claims.Username,
+	}
+	client.hub.register <- client
+
+	go client.writePump()
+	go client.readPump()
+}
+
 func (c *Client) readPump() {
 	defer func() {
 		c.hub.unregister <- c
 		c.conn.Close()
 	}()
-
 	c.conn.SetReadLimit(maxMessageSize)
 	c.conn.SetReadDeadline(time.Now().Add(pongWait))
-	c.conn.SetPongHandler(func(string) error {
-		c.conn.SetReadDeadline(time.Now().Add(pongWait))
-		return nil
-	})
-
+	c.conn.SetPongHandler(func(string) error { c.conn.SetReadDeadline(time.Now().Add(pongWait)); return nil })
 	for {
-		_, messageBytes, err := c.conn.ReadMessage()
+		_, p, err := c.conn.ReadMessage()
 		if err != nil {
 			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				log.Printf("error: %v", err)
 			}
 			break
 		}
 
-		var wsMsg WSMessage
-		if err := json.Unmarshal(messageBytes, &wsMsg); err != nil {
-			log.Printf("error unmarshaling message: %v", err)
+		var wsMessage WSMessage
+		if err := json.Unmarshal(p, &wsMessage); err != nil {
 			continue
 		}
 
-		switch wsMsg.Type {
-		case "chat_message":
-			var chatMsg ChatMessage
-			payloadBytes, _ := json.Marshal(wsMsg.Payload)
-			if err := json.Unmarshal(payloadBytes, &chatMsg); err != nil {
-				log.Printf("error unmarshaling chat message: %v", err)
+		if wsMessage.Type == "chat_message" {
+			var content string
+			if payloadMap, ok := wsMessage.Payload.(map[string]interface{}); ok {
+				if contentVal, ok := payloadMap["content"].(string); ok {
+					content = contentVal
+				}
+			}
+
+			if content == "" {
+				log.Printf("Empty message content received from user %s", c.username)
 				continue
 			}
 
+			timestamp := time.Now()
+
+			// Create message to be broadcast to all clients
 			message := Message{
-				Type:      "chat_message",
 				UserID:    c.userID,
 				Username:  c.username,
-				Content:   chatMsg.Content,
-				Timestamp: time.Now(),
+				Content:   content,
+				Timestamp: timestamp,
 			}
 
-			// Save to database
-			c.hub.saveMessage(message)
+			outgoingMsg := WSMessage{
+				Type:    "chat_message",
+				Payload: message,
+			}
 
-			// Broadcast to all clients
-			messageBytes, _ := json.Marshal(message)
+			messageBytes, err := json.Marshal(outgoingMsg)
+			if err != nil {
+				log.Printf("Error marshaling outgoing message: %v", err)
+				continue
+			}
+
 			c.hub.broadcast <- messageBytes
+
+			// Save message to database
+			c.hub.saveMessage(message)
 		}
 	}
 }
@@ -93,12 +136,12 @@ func (c *Client) writePump() {
 		ticker.Stop()
 		c.conn.Close()
 	}()
-
 	for {
 		select {
 		case message, ok := <-c.send:
 			c.conn.SetWriteDeadline(time.Now().Add(writeWait))
 			if !ok {
+				// The hub closed the channel.
 				c.conn.WriteMessage(websocket.CloseMessage, []byte{})
 				return
 			}
@@ -107,14 +150,8 @@ func (c *Client) writePump() {
 			if err != nil {
 				return
 			}
-			w.Write(message)
 
-			// Add queued chat messages to the current websocket message
-			n := len(c.send)
-			for i := 0; i < n; i++ {
-				w.Write([]byte{'\n'})
-				w.Write(<-c.send)
-			}
+			w.Write(message)
 
 			if err := w.Close(); err != nil {
 				return
