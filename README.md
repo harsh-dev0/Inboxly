@@ -1,4 +1,4 @@
-# (Inboxly)[https://inboxly-azure.vercel.app/]
+# [Inboxly](https://inboxly-azure.vercel.app/)
 
 A modern real-time chat application featuring authentication, persistent message history, and a sleek, responsive UI. Built with Go (Gin) for the backend and React (Vite + TypeScript + Tailwind CSS) for the frontend.
 
